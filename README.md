@@ -148,13 +148,18 @@ and `debug-ended`.
    package. Commit it and merge.
 2. Tag the merge commit and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
 
-The release workflow builds all platforms, publishes `softphone-use` and its five
-`softphone-use-<platform>` packages to npm with provenance, and creates a GitHub release with
-the binaries. A version with a suffix, such as `0.2.0-beta.1`, publishes under the `next` tag.
-With an `NPM_TOKEN` secret it publishes too, with provenance when the repository is
-public. Without one, download the `npm-packages` artifact from the run and publish by hand:
-`node scripts/npm.mjs publish <dir>`. It publishes the platform packages first and skips
-versions already on npm.
+The release workflow builds all platforms, creates a GitHub release with the binaries and
+publishes `softphone-use` and its five `softphone-use-<platform>` packages to npm. A version
+with a suffix, such as `0.2.0-beta.1`, publishes under the `next` tag. Versions already on npm
+are skipped, so re-running a release is safe.
+
+npm authenticates the workflow with [trusted publishing](https://docs.npmjs.com/trusted-publishers):
+on npmjs.com, add a trusted publisher to each of the six packages (GitHub Actions, repository
+`voxtellai/softphone-use`, workflow `release.yml`). An `NPM_TOKEN` secret works as well. Packages
+get provenance once the repository is public.
+
+To publish a release by hand, download the run's `npm-packages` artifact and run
+`node scripts/npm.mjs publish <dir>`.
 
 ## License
 

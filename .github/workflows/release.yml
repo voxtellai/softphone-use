@@ -65,14 +65,14 @@ jobs:
     name: Publish
     needs: build
     runs-on: ubuntu-22.04
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # Trusted publishing (OIDC) needs npm 11.5 or later.
+      - run: npm install -g npm@11
       - uses: actions/download-artifact@v5
         with:
           pattern: bin-*
@@ -84,15 +84,6 @@ jobs:
         with:
           name: npm-packages
           path: dist/npm
-      # Without an NPM_TOKEN secret, publish by hand from the npm-packages artifact:
-      # node scripts/npm.mjs publish <dir>
-      - name: Publish to npm
-        if: env.NPM_TOKEN != ''
-        run: node scripts/npm.mjs publish dist/npm
-        env:
-          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
-          # npm provenance needs a public repository.
-          NPM_CONFIG_PROVENANCE: ${{ github.event.repository.visibility == 'public' }}
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -110,4 +101,12 @@ jobs:
           done
           flags="--generate-notes"
           case "$GITHUB_REF_NAME" in *-*) flags="$flags --prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" $flags --title "$GITHUB_REF_NAME" archives/*
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" $flags --title "$GITHUB_REF_NAME" archives/*
+      # Authenticates with npm trusted publishing, or with an NPM_TOKEN secret when one is set.
+      # Versions already on npm are skipped, so a re-run after a manual publish passes.
+      - name: Publish to npm
+        run: node scripts/npm.mjs publish dist/npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # npm provenance needs a public repository.
+          NPM_CONFIG_PROVENANCE: ${{ github.event.repository.visibility == 'public' }}
