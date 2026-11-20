@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-22.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libasound2-dev libwayland-dev libxkbcommon-dev libudev-dev libfontconfig1-dev
+      - name: Rust toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        if: runner.os == 'Linux'
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Test
+        run: cargo test --locked
+      - name: Run
+        run: cargo run --locked -- --version
+
+  npm:
+    name: npm wrapper
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - name: Syntax
+        run: node --check npm/softphone-use/bin/softphone-use.js && node --check scripts/npm.mjs
+      - name: Versions agree
+        run: node scripts/npm.mjs check "$(node -p "require('./npm/softphone-use/package.json').version")"
+      - name: The wrapper runs the binary and passes arguments through
+        run: |
+          printf '#!/bin/sh\necho "ran $*"\nexit 3\n' > "$RUNNER_TEMP/fake" && chmod +x "$RUNNER_TEMP/fake"
+          set +e
+          out=$(SOFTPHONE_USE_BINARY="$RUNNER_TEMP/fake" node npm/softphone-use/bin/softphone-use.js mcp --x)
+          code=$?
+          set -e
+          test "$out" = "ran mcp --x" && test "$code" = 3
