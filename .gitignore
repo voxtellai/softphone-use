@@ -1,0 +1,7 @@
+/target/
+/dist/
+node_modules/
+recordings/
+.env
+.env.local
+.DS_Store
