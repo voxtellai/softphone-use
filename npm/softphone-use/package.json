@@ -22,6 +22,6 @@
     "softphone-use-darwin-x64": "0.1.0",
     "softphone-use-linux-arm64": "0.1.0",
     "softphone-use-linux-x64": "0.1.0",
-    "softphone-use-win32-x64": "0.1.0"
+    "softphone-use-windows-x64": "0.1.0"
   }
 }
