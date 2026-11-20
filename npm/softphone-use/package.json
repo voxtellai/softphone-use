@@ -1,0 +1,27 @@
+{
+  "name": "softphone-use",
+  "version": "0.1.0",
+  "description": "A SIP softphone that coding agents can drive: an HTTP API, an MCP server and a native window to watch the calls.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voxtellai/softphone-use.git"
+  },
+  "homepage": "https://github.com/voxtellai/softphone-use#readme",
+  "bugs": "https://github.com/voxtellai/softphone-use/issues",
+  "keywords": ["sip", "softphone", "voip", "mcp", "testing", "rtp", "pbx", "voice-agent"],
+  "bin": {
+    "softphone-use": "bin/softphone-use.js"
+  },
+  "files": ["bin", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "softphone-use-darwin-arm64": "0.1.0",
+    "softphone-use-darwin-x64": "0.1.0",
+    "softphone-use-linux-arm64": "0.1.0",
+    "softphone-use-linux-x64": "0.1.0",
+    "softphone-use-win32-x64": "0.1.0"
+  }
+}

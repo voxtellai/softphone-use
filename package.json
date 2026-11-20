@@ -1,0 +1,14 @@
+{
+  "name": "softphone-use-workspace",
+  "private": true,
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "build": "cargo build --release",
+    "dev": "cargo run -- serve",
+    "test": "cargo test",
+    "lint": "cargo fmt --check && cargo clippy --all-targets -- -D warnings",
+    "release:version": "node scripts/npm.mjs version",
+    "npm:stage": "node scripts/npm.mjs stage"
+  }
+}
