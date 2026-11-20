@@ -17,14 +17,18 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const main = join(root, "npm", "softphone-use");
 
-/** npm platform key -> what npm matches on, and the Rust target it is built for. */
+/** npm platform key (`process.platform`-`process.arch`) -> what npm matches on, the Rust target it is
+ *  built for, and the package name when it is not softphone-use-<key>. */
 export const PLATFORMS = {
   "darwin-arm64": { os: "darwin", cpu: "arm64", target: "aarch64-apple-darwin" },
   "darwin-x64": { os: "darwin", cpu: "x64", target: "x86_64-apple-darwin" },
   "linux-arm64": { os: "linux", cpu: "arm64", libc: "glibc", target: "aarch64-unknown-linux-gnu" },
   "linux-x64": { os: "linux", cpu: "x64", libc: "glibc", target: "x86_64-unknown-linux-gnu" },
-  "win32-x64": { os: "win32", cpu: "x64", target: "x86_64-pc-windows-msvc" },
+  // npm's spam filter refuses the name softphone-use-win32-x64.
+  "win32-x64": { os: "win32", cpu: "x64", target: "x86_64-pc-windows-msvc", name: "softphone-use-windows-x64" },
 };
+
+const packageName = (key) => PLATFORMS[key].name ?? `softphone-use-${key}`;
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const writeJson = (p, v) => writeFileSync(p, `${JSON.stringify(v, null, 2)}\n`);
@@ -39,7 +43,7 @@ function setVersion(version) {
   writeFileSync(cargo, readFileSync(cargo, "utf8").replace(/^version = "[^"]+"/m, `version = "${version}"`));
   const pkg = readJson(join(main, "package.json"));
   pkg.version = version;
-  for (const key of Object.keys(PLATFORMS)) pkg.optionalDependencies[`softphone-use-${key}`] = version;
+  pkg.optionalDependencies = Object.fromEntries(Object.keys(PLATFORMS).map((key) => [packageName(key), version]));
   writeJson(join(main, "package.json"), pkg);
   // Keep Cargo.lock's own entry in step.
   const lock = join(root, "Cargo.lock");
@@ -62,14 +66,15 @@ function stage(artifacts, out) {
     const exe = p.os === "win32" ? "softphone-use.exe" : "softphone-use";
     const from = join(artifacts, key, exe);
     if (!existsSync(from)) throw new Error(`missing ${from}`);
-    const dir = join(out, `softphone-use-${key}`);
+    const name = packageName(key);
+    const dir = join(out, name);
     mkdirSync(join(dir, "bin"), { recursive: true });
     copyFileSync(from, join(dir, "bin", exe));
     chmodSync(join(dir, "bin", exe), 0o755);
     copyFileSync(join(root, "LICENSE"), join(dir, "LICENSE"));
-    writeFileSync(join(dir, "README.md"), `# softphone-use-${key}\n\nThe ${key} binary of [softphone-use](https://www.npmjs.com/package/softphone-use). Install \`softphone-use\` instead.\n`);
+    writeFileSync(join(dir, "README.md"), `# ${name}\n\nThe ${key} binary of [softphone-use](https://www.npmjs.com/package/softphone-use). Install \`softphone-use\` instead.\n`);
     writeJson(join(dir, "package.json"), {
-      name: `softphone-use-${key}`,
+      name,
       version,
       description: `The ${key} binary of softphone-use.`,
       license: pkg.license,

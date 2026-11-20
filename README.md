@@ -149,7 +149,8 @@ and `debug-ended`.
 2. Tag the merge commit and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
 
 The release workflow builds all platforms, creates a GitHub release with the binaries and
-publishes `softphone-use` and its five `softphone-use-<platform>` packages to npm. A version
+publishes `softphone-use` and its five platform packages to npm (`softphone-use-<platform>`,
+and `softphone-use-windows-x64` for Windows). A version
 with a suffix, such as `0.2.0-beta.1`, publishes under the `next` tag. Versions already on npm
 are skipped, so re-running a release is safe.
 
