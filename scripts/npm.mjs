@@ -9,7 +9,7 @@
 //
 // `stage` expects <artifacts>/<platform>/softphone-use[.exe], one directory per entry in PLATFORMS.
 
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -90,10 +90,13 @@ function stage(artifacts, out) {
   console.log(`staged ${version} in ${out}`);
 }
 
+/** Whether npm already has this version. A package npm has never seen counts as not published. */
 function published(name, version) {
+  const r = spawnSync("npm", ["view", name, "versions", "--json"], { encoding: "utf8", shell: process.platform === "win32" });
+  if (r.status !== 0) return false;
   try {
-    execFileSync("npm", ["view", `${name}@${version}`, "version"], { stdio: ["ignore", "pipe", "ignore"], shell: process.platform === "win32" });
-    return true;
+    const versions = JSON.parse(r.stdout || "[]");
+    return (Array.isArray(versions) ? versions : [versions]).includes(version);
   } catch {
     return false;
   }
@@ -109,7 +112,20 @@ function publish(out) {
     }
     const tag = version.includes("-") ? "next" : "latest";
     console.log(`publishing ${name}@${version} (${tag})`);
-    execFileSync("npm", ["publish", join(out, d), "--access", "public", "--tag", tag], { stdio: "inherit", shell: process.platform === "win32" });
+    // stdout and the 2FA prompt stay on the terminal; stderr is read to recognise a version
+    // that is already up, which `npm view` can miss for a few minutes after a publish.
+    const r = spawnSync("npm", ["publish", join(out, d), "--access", "public", "--tag", tag], {
+      stdio: ["inherit", "inherit", "pipe"],
+      encoding: "utf8",
+      shell: process.platform === "win32",
+    });
+    process.stderr.write(r.stderr ?? "");
+    if (r.status === 0) continue;
+    if (/cannot publish over the previously published versions?/i.test(r.stderr ?? "")) {
+      console.log(`${name}@${version} is already on npm, skipping`);
+      continue;
+    }
+    throw new Error(`npm publish ${name}@${version} failed; fix the cause and run this again, it skips what is already up`);
   }
 }
 
