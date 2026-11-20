@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # The jobs use npm only; without this, setup-node looks for pnpm to cache.
+          package-manager-cache: false
       - name: The tag matches the version
         shell: bash
         run: node scripts/npm.mjs check "${GITHUB_REF_NAME#v}"
@@ -70,6 +72,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          # The jobs use npm only; without this, setup-node looks for pnpm to cache.
+          package-manager-cache: false
           registry-url: https://registry.npmjs.org
       # Trusted publishing (OIDC) needs npm 11.5 or later.
       - run: npm install -g npm@11
