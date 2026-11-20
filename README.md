@@ -151,7 +151,10 @@ and `debug-ended`.
 The release workflow builds all platforms, publishes `softphone-use` and its five
 `softphone-use-<platform>` packages to npm with provenance, and creates a GitHub release with
 the binaries. A version with a suffix, such as `0.2.0-beta.1`, publishes under the `next` tag.
-It needs an `NPM_TOKEN` secret that can publish these packages.
+With an `NPM_TOKEN` secret it publishes too, with provenance when the repository is
+public. Without one, download the `npm-packages` artifact from the run and publish by hand:
+`node scripts/npm.mjs publish <dir>`. It publishes the platform packages first and skips
+versions already on npm.
 
 ## License
 

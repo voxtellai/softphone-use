@@ -4,7 +4,8 @@
 //   node scripts/npm.mjs version <x.y.z>                 set the version in Cargo.toml and package.json
 //   node scripts/npm.mjs check <x.y.z>                   fail unless both already say <x.y.z>
 //   node scripts/npm.mjs stage <artifacts> <out>         one package per platform, plus the main package
-//   node scripts/npm.mjs publish <out>                   publish what stage made, platforms first
+//   node scripts/npm.mjs publish <out>                   publish what stage made, platforms first; skips
+//                                                        versions already on npm. CI adds provenance.
 //
 // `stage` expects <artifacts>/<platform>/softphone-use[.exe], one directory per entry in PLATFORMS.
 
@@ -108,7 +109,7 @@ function publish(out) {
     }
     const tag = version.includes("-") ? "next" : "latest";
     console.log(`publishing ${name}@${version} (${tag})`);
-    execFileSync("npm", ["publish", join(out, d), "--access", "public", "--provenance", "--tag", tag], { stdio: "inherit" });
+    execFileSync("npm", ["publish", join(out, d), "--access", "public", "--tag", tag], { stdio: "inherit", shell: process.platform === "win32" });
   }
 }
 
